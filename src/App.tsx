@@ -503,6 +503,12 @@ export default function App() {
   // Recording states
   const [isRecording, setIsRecording] = useState(false)
   const [autoRecord, setAutoRecord] = useState(false)
+
+  // Collapsible sidebar sections
+  const [openSection1, setOpenSection1] = useState(true)
+  const [openSection2, setOpenSection2] = useState(true)
+  const [openSection3, setOpenSection3] = useState(true)
+  const [openSection4, setOpenSection4] = useState(true)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<BlobPart[]>([])
 
@@ -1047,265 +1053,326 @@ async function drawLabel(scene, textObj, dotObj = null) {
       <div className="app-container">
         {/* ── Sidebar ───────────────────────────────────────────────── */}
         <aside className="sidebar" style={{ overflowY: 'auto' }}>
-          <div>
-            <p className="sidebar-title">1. Görsel Yükle (İsteğe Bağlı)</p>
-          </div>
+          {/* Section 1 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div 
+              className="sidebar-title"
+              onClick={() => setOpenSection1(!openSection1)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
+            >
+              <span>1. Görsel Yükle (İsteğe Bağlı)</span>
+              <span style={{ 
+                fontSize: '0.75rem', 
+                transition: 'transform 0.2s ease', 
+                transform: openSection1 ? 'rotate(90deg)' : 'rotate(0deg)',
+                color: 'var(--text-muted)'
+              }}>▶</span>
+            </div>
 
-          <div className="card">
-            {screenshotUrl ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div className="screenshot-preview-container">
-                  <img src={screenshotUrl} alt="Referans görsel" />
-                  <button
-                    className="btn-remove-screenshot"
-                    onClick={() => {
-                      setScreenshotUrl(null)
-                      setAiStatus(null)
-                      addLog('info', 'Görsel kaldırıldı.')
-                    }}
-                    title="Kaldır"
+            {openSection1 && (
+              <div className="card">
+                {screenshotUrl ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div className="screenshot-preview-container">
+                      <img src={screenshotUrl} alt="Referans görsel" />
+                      <button
+                        className="btn-remove-screenshot"
+                        onClick={() => {
+                          setScreenshotUrl(null)
+                          setAiStatus(null)
+                          addLog('info', 'Görsel kaldırıldı.')
+                        }}
+                        title="Kaldır"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <button 
+                      className="btn" 
+                      style={{ 
+                        width: '100%', 
+                        background: 'var(--accent-gradient)', 
+                        color: 'white',
+                        fontWeight: 'bold',
+                        padding: '0.75rem',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer'
+                      }}
+                      onClick={handleRunAI}
+                      disabled={isPlaying}
+                    >
+                      ✨ Analiz Et ve Çiz
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className={`upload-zone${dragOver ? ' drag-over' : ''}`}
+                    onDrop={handleDrop}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                    onDragLeave={() => setDragOver(false)}
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    ✕
-                  </button>
-                </div>
-                <button 
-                  className="btn" 
-                  style={{ 
-                    width: '100%', 
-                    background: 'var(--accent-gradient)', 
-                    color: 'white',
-                    fontWeight: 'bold',
-                    padding: '0.75rem',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer'
+                    <svg width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5V18a2.25 2.25 0 002.25 2.25h13.5A2.25 2.25 0 0021 18v-1.5M16.5 12L12 7.5m0 0L7.5 12M12 7.5V18" />
+                    </svg>
+                    <p className="upload-text">Yüklemek için tıklayın ya da sürükleyin</p>
+                    <p className="upload-hint">Çizim alanının oranını belirler</p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleFile(file)
                   }}
-                  onClick={handleRunAI}
-                  disabled={isPlaying}
-                >
-                  ✨ Analiz Et ve Çiz
-                </button>
-              </div>
-            ) : (
-              <div
-                className={`upload-zone${dragOver ? ' drag-over' : ''}`}
-                onDrop={handleDrop}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-                onDragLeave={() => setDragOver(false)}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <svg width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5V18a2.25 2.25 0 002.25 2.25h13.5A2.25 2.25 0 0021 18v-1.5M16.5 12L12 7.5m0 0L7.5 12M12 7.5V18" />
-                </svg>
-                <p className="upload-text">Yüklemek için tıklayın ya da sürükleyin</p>
-                <p className="upload-hint">Çizim alanının oranını belirler</p>
+                />
               </div>
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleFile(file)
-              }}
-            />
           </div>
 
-          {/* Standart Animations */}
-          <div style={{ marginTop: '0.5rem' }}>
-            <p className="sidebar-title">2. Hazır Fonksiyon Seçin</p>
-          </div>
-          <div className="card">
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-              Tıklayarak animasyonu oluşturun:
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              {Object.entries(GRAPH_PRESETS).map(([k, v]) => (
-                <button
-                  key={k}
-                  className="btn"
-                  style={{
-                    padding: '0.5rem',
-                    fontSize: '0.85rem',
-                    justifyContent: 'flex-start'
-                  }}
-                  onClick={() => handleRunPreset(k)}
-                  disabled={isPlaying}
-                >
-                  ▶ {v.label}
-                </button>
-              ))}
+          {/* Section 2 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div 
+              className="sidebar-title"
+              onClick={() => setOpenSection2(!openSection2)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
+            >
+              <span>2. Hazır Fonksiyon Seçin</span>
+              <span style={{ 
+                fontSize: '0.75rem', 
+                transition: 'transform 0.2s ease', 
+                transform: openSection2 ? 'rotate(90deg)' : 'rotate(0deg)',
+                color: 'var(--text-muted)'
+              }}>▶</span>
             </div>
-          </div>
 
-          <div style={{ marginTop: '0.5rem' }}>
-            <p className="sidebar-title">3. Kendi Fonksiyonunuzu Çizin</p>
-          </div>
-          <div className="card">
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Aşağıdaki butona tıklayarak matematiksel fonksiyonunuzu girin.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* @ts-ignore */}
-              <math-field 
-                read-only
-                style={{ 
-                  width: '100%', 
-                  fontSize: '1.2rem',
-                  background: 'var(--bg-main)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  padding: '0.75rem',
-                  color: 'var(--text-primary)',
-                  pointerEvents: 'none'
-                }}
-              >
-                {mathLatex}
-              {/* @ts-ignore */}
-              </math-field>
-
-              <button 
-                onClick={() => setIsMathModalOpen(true)}
-                style={{
-                  padding: '0.75rem',
-                  background: 'transparent',
-                  border: '1px dashed var(--border-color)',
-                  borderRadius: '8px',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-              >
-                ✏️ Formülü Düzenle
-              </button>
-
-              {/* Dynamic Analysis section */}
-              <div style={{
-                background: 'rgba(16, 185, 129, 0.05)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                borderRadius: '8px',
-                padding: '0.6rem 0.75rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.2rem',
-                marginTop: '0.25rem'
-              }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.5px' }}>FONKSİYON TESPİT EDİLDİ</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: '600' }}>
-                  ✓ {getFunctionAnalysis(customFunction).type}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.25rem' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.5px' }}>ÖNERİLEN ANİMASYONLAR</span>
-                {getFunctionAnalysis(customFunction).animations.map(anim => (
-                  <label key={anim.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedAnimations.includes(anim.id)} 
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedAnimations(prev => [...prev, anim.id]);
-                        } else {
-                          setSelectedAnimations(prev => prev.filter(id => id !== anim.id));
-                        }
+            {openSection2 && (
+              <div className="card">
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                  Tıklayarak animasyonu oluşturun:
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  {Object.entries(GRAPH_PRESETS).map(([k, v]) => (
+                    <button
+                      key={k}
+                      className="btn"
+                      style={{
+                        padding: '0.5rem',
+                        fontSize: '0.85rem',
+                        justifyContent: 'flex-start'
                       }}
-                      style={{ accentColor: 'var(--accent-primary)' }} 
-                    /> 
-                    {anim.label}
-                  </label>
-                ))}
+                      onClick={() => handleRunPreset(k)}
+                      disabled={isPlaying}
+                    >
+                      ▶ {v.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-
-              <button 
-                onClick={() => handleRunCustom()}
-                disabled={isPlaying}
-                style={{
-                  padding: '0.75rem',
-                  background: isPlaying ? 'var(--bg-main)' : 'var(--accent-gradient)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: isPlaying ? 'var(--text-muted)' : 'white',
-                  fontWeight: '600',
-                  cursor: isPlaying ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  transition: 'transform 0.2s',
-                  marginTop: '0.5rem'
-                }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>▶</span> Çiz ve Oluştur
-              </button>
-            </div>
+            )}
           </div>
 
-          {/* Dışa Aktarma Bölümü */}
-          <div style={{ marginTop: '0.5rem' }}>
-            <p className="sidebar-title">4. Kaydet ve Dışa Aktar</p>
+          {/* Section 3 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div 
+              className="sidebar-title"
+              onClick={() => setOpenSection3(!openSection3)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
+            >
+              <span>3. Kendi Fonksiyonunuzu Çizin</span>
+              <span style={{ 
+                fontSize: '0.75rem', 
+                transition: 'transform 0.2s ease', 
+                transform: openSection3 ? 'rotate(90deg)' : 'rotate(0deg)',
+                color: 'var(--text-muted)'
+              }}>▶</span>
+            </div>
+
+            {openSection3 && (
+              <div className="card">
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  Aşağıdaki butona tıklayarak matematiksel fonksiyonunuzu girin.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {/* @ts-ignore */}
+                  <math-field 
+                    read-only
+                    style={{ 
+                      width: '100%', 
+                      fontSize: '1.2rem',
+                      background: 'var(--bg-main)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      color: 'var(--text-primary)',
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    {mathLatex}
+                  {/* @ts-ignore */}
+                  </math-field>
+
+                  <button 
+                    onClick={() => setIsMathModalOpen(true)}
+                    style={{
+                      padding: '0.75rem',
+                      background: 'transparent',
+                      border: '1px dashed var(--border-color)',
+                      borderRadius: '8px',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                  >
+                    ✏️ Formülü Düzenle
+                  </button>
+
+                  {/* Dynamic Analysis section */}
+                  <div style={{
+                    background: 'rgba(16, 185, 129, 0.05)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    borderRadius: '8px',
+                    padding: '0.6rem 0.75rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.2rem',
+                    marginTop: '0.25rem'
+                  }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.5px' }}>FONKSİYON TESPİT EDİLDİ</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: '600' }}>
+                      ✓ {getFunctionAnalysis(customFunction).type}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.25rem' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.5px' }}>ÖNERİLEN ANİMASYONLAR</span>
+                    {getFunctionAnalysis(customFunction).animations.map(anim => (
+                      <label key={anim.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedAnimations.includes(anim.id)} 
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedAnimations(prev => [...prev, anim.id]);
+                            } else {
+                              setSelectedAnimations(prev => prev.filter(id => id !== anim.id));
+                            }
+                          }}
+                          style={{ accentColor: 'var(--accent-primary)' }} 
+                        /> 
+                        {anim.label}
+                      </label>
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={() => handleRunCustom()}
+                    disabled={isPlaying}
+                    style={{
+                      padding: '0.75rem',
+                      background: isPlaying ? 'var(--bg-main)' : 'var(--accent-gradient)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: isPlaying ? 'var(--text-muted)' : 'white',
+                      fontWeight: '600',
+                      cursor: isPlaying ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      transition: 'transform 0.2s',
+                      marginTop: '0.5rem'
+                    }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>▶</span> Çiz ve Oluştur
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="card" style={{ gap: '0.85rem' }}>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Animasyonunuzu veya kodunuzu bilgisayarınıza kaydedin:
-            </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={autoRecord}
-                  onChange={(e) => setAutoRecord(e.target.checked)}
-                />
-                <span>Çalıştırırken Otomatik Kaydet</span>
-              </label>
+          {/* Section 4 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div 
+              className="sidebar-title"
+              onClick={() => setOpenSection4(!openSection4)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
+            >
+              <span>4. Kaydet ve Dışa Aktar</span>
+              <span style={{ 
+                fontSize: '0.75rem', 
+                transition: 'transform 0.2s ease', 
+                transform: openSection4 ? 'rotate(90deg)' : 'rotate(0deg)',
+                color: 'var(--text-muted)'
+              }}>▶</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem', marginTop: '0.25rem' }}>
-              {isRecording && !autoRecord ? (
-                <button
-                  className="btn btn-danger"
-                  onClick={stopManualRecording}
-                  style={{ width: '100%', fontWeight: 'bold' }}
-                >
-                  ⏹ Kaydı Durdur (WebM)
-                </button>
-              ) : (
-                <button
-                  className="btn btn-success"
-                  onClick={startManualRecording}
-                  disabled={isPlaying || isRecording}
-                  style={{ width: '100%', fontWeight: 'bold' }}
-                >
-                  ⏺ Manuel Kayıt Başlat (WebM)
-                </button>
-              )}
+            {openSection4 && (
+              <div className="card" style={{ gap: '0.85rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Animasyonunuzu veya kodunuzu bilgisayarınıza kaydedin:
+                </p>
 
-              <button
-                className="btn"
-                onClick={captureScreenshot}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-              >
-                📸 Ekran Görüntüsü Al (PNG)
-              </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={autoRecord}
+                      onChange={(e) => setAutoRecord(e.target.checked)}
+                    />
+                    <span>Çalıştırırken Otomatik Kaydet</span>
+                  </label>
+                </div>
 
-              <button
-                className="btn"
-                onClick={downloadCode}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-              >
-                💾 Manim Kodunu İndir (.js)
-              </button>
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem', marginTop: '0.25rem' }}>
+                  {isRecording && !autoRecord ? (
+                    <button
+                      className="btn btn-danger"
+                      onClick={stopManualRecording}
+                      style={{ width: '100%', fontWeight: 'bold' }}
+                    >
+                      ⏹ Kaydı Durdur (WebM)
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-success"
+                      onClick={startManualRecording}
+                      disabled={isPlaying || isRecording}
+                      style={{ width: '100%', fontWeight: 'bold' }}
+                    >
+                      ⏺ Manuel Kayıt Başlat (WebM)
+                    </button>
+                  )}
+
+                  <button
+                    className="btn"
+                    onClick={captureScreenshot}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                  >
+                    📸 Ekran Görüntüsü Al (PNG)
+                  </button>
+
+                  <button
+                    className="btn"
+                    onClick={downloadCode}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                  >
+                    💾 Manim Kodunu İndir (.js)
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ flex: 1, minHeight: '1rem' }} />
