@@ -500,6 +500,12 @@ export default function App() {
 
   const [selectedAnimations, setSelectedAnimations] = useState<string[]>([])
 
+  // Recording states
+  const [isRecording, setIsRecording] = useState(false)
+  const [autoRecord, setAutoRecord] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordedChunksRef = useRef<BlobPart[]>([])
+
   const getFunctionAnalysis = useCallback((funcStr: string) => {
     const normalized = funcStr.replace(/\s+/g, '').toLowerCase();
     
@@ -861,11 +867,130 @@ async function drawLabel(scene, textObj, dotObj = null) {
     }
   }
 
+  // ── Recording and Exporting Functions ──────────────────────────────────────────
+
+  const startManualRecording = () => {
+    const canvas = document.querySelector('.manim-canvas-container canvas') as HTMLCanvasElement
+    if (!canvas) {
+      addLog('error', 'Kayıt başlatılamadı: Çizim düzlemi bulunamadı.')
+      return
+    }
+    recordedChunksRef.current = []
+    try {
+      let options = { mimeType: 'video/webm;codecs=vp9' }
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/webm;codecs=vp8' }
+      }
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/webm' }
+      }
+      const stream = canvas.captureStream(30)
+      const recorder = new MediaRecorder(stream, options)
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunksRef.current.push(e.data)
+        }
+      }
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `manim-animation-${Date.now()}.webm`
+        a.click()
+        addLog('success', 'Manuel video kaydı indirildi.')
+      }
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+      addLog('info', 'Manuel kayıt başlatıldı.')
+    } catch (e: any) {
+      addLog('error', 'Kayıt başlatılamadı: ' + e.message)
+    }
+  }
+
+  const stopManualRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+      addLog('info', 'Kayıt durduruldu, video oluşturuluyor...')
+    }
+  }
+
+  const captureScreenshot = () => {
+    const canvas = document.querySelector('.manim-canvas-container canvas') as HTMLCanvasElement
+    if (!canvas) {
+      addLog('error', 'Ekran görüntüsü alınamadı: Çizim düzlemi bulunamadı.')
+      return
+    }
+    try {
+      const url = canvas.toDataURL('image/png')
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `manim-screenshot-${Date.now()}.png`
+      a.click()
+      addLog('success', 'Ekran görüntüsü kaydedildi.')
+    } catch (e: any) {
+      addLog('error', 'Ekran görüntüsü alma hatası: ' + e.message)
+    }
+  }
+
+  const downloadCode = () => {
+    try {
+      const blob = new Blob([editorCode], { type: 'text/javascript' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `manim-code-${Date.now()}.js`
+      a.click()
+      addLog('success', 'JavaScript kodu indirildi.')
+    } catch (e: any) {
+      addLog('error', 'Kod indirme hatası: ' + e.message)
+    }
+  }
+
   // ── Run / Re-render ────────────────────────────────────────────────────
 
   const handleSceneReady = async (scene: Scene) => {
     addLog('success', 'Sahne başlatıldı. Kod derleniyor...')
     setIsPlaying(true)
+
+    let autoRecorder: MediaRecorder | null = null
+    const chunks: BlobPart[] = []
+
+    if (autoRecord) {
+      const canvas = document.querySelector('.manim-canvas-container canvas') as HTMLCanvasElement
+      if (canvas) {
+        try {
+          let options = { mimeType: 'video/webm;codecs=vp9' }
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm;codecs=vp8' }
+          }
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm' }
+          }
+          const stream = canvas.captureStream(30)
+          autoRecorder = new MediaRecorder(stream, options)
+          autoRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) chunks.push(e.data)
+          }
+          autoRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `manim-animation-${Date.now()}.webm`
+            a.click()
+            addLog('success', 'Otomatik kayıt başarıyla indirildi.')
+          }
+          autoRecorder.start()
+          setIsRecording(true)
+          addLog('info', 'Otomatik video kaydı başlatıldı.')
+        } catch (e: any) {
+          addLog('error', 'Otomatik kayıt başlatılamadı: ' + e.message)
+        }
+      }
+    }
 
     try {
       // Use Babel to transpile TypeScript to JavaScript
@@ -896,6 +1021,11 @@ async function drawLabel(scene, textObj, dotObj = null) {
     } finally {
       setIsPlaying(false)
       setAiStatus(null)
+      if (autoRecorder && autoRecorder.state !== 'inactive') {
+        autoRecorder.stop()
+        setIsRecording(false)
+        addLog('info', 'Otomatik kayıt sonlandırıldı.')
+      }
     }
   }
 
@@ -1114,10 +1244,66 @@ async function drawLabel(scene, textObj, dotObj = null) {
                   transition: 'transform 0.2s',
                   marginTop: '0.5rem'
                 }}
-                onMouseOver={e => { if(!isPlaying) e.currentTarget.style.transform = 'translateY(-2px)' }}
-                onMouseOut={e => { if(!isPlaying) e.currentTarget.style.transform = 'translateY(0)' }}
               >
                 <span style={{ fontSize: '1.2rem' }}>▶</span> Çiz ve Oluştur
+              </button>
+            </div>
+          </div>
+
+          {/* Dışa Aktarma Bölümü */}
+          <div style={{ marginTop: '0.5rem' }}>
+            <p className="sidebar-title">4. Kaydet ve Dışa Aktar</p>
+          </div>
+          <div className="card" style={{ gap: '0.85rem' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Animasyonunuzu veya kodunuzu bilgisayarınıza kaydedin:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={autoRecord}
+                  onChange={(e) => setAutoRecord(e.target.checked)}
+                />
+                <span>Çalıştırırken Otomatik Kaydet</span>
+              </label>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem', marginTop: '0.25rem' }}>
+              {isRecording && !autoRecord ? (
+                <button
+                  className="btn btn-danger"
+                  onClick={stopManualRecording}
+                  style={{ width: '100%', fontWeight: 'bold' }}
+                >
+                  ⏹ Kaydı Durdur (WebM)
+                </button>
+              ) : (
+                <button
+                  className="btn btn-success"
+                  onClick={startManualRecording}
+                  disabled={isPlaying || isRecording}
+                  style={{ width: '100%', fontWeight: 'bold' }}
+                >
+                  ⏺ Manuel Kayıt Başlat (WebM)
+                </button>
+              )}
+
+              <button
+                className="btn"
+                onClick={captureScreenshot}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                📸 Ekran Görüntüsü Al (PNG)
+              </button>
+
+              <button
+                className="btn"
+                onClick={downloadCode}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                💾 Manim Kodunu İndir (.js)
               </button>
             </div>
           </div>
@@ -1220,6 +1406,12 @@ async function drawLabel(scene, textObj, dotObj = null) {
                     setCameraZoom(z => Math.max(0.2, Math.min(5, z + zoomDelta)));
                   }}
                 >
+                  {isRecording && (
+                    <div className="recording-indicator">
+                      <span className="recording-dot" />
+                      <span>KAYDEDİLİYOR</span>
+                    </div>
+                  )}
                   
                   <div className="manim-canvas-container" style={{
                     transition: isPanning ? 'none' : 'transform 0.3s ease',
