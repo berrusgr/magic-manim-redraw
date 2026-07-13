@@ -505,10 +505,10 @@ export default function App() {
   const [autoRecord, setAutoRecord] = useState(false)
 
   // Collapsible sidebar sections
-  const [openSection1, setOpenSection1] = useState(true)
+  const [openSection1, setOpenSection1] = useState(false)
   const [openSection2, setOpenSection2] = useState(true)
-  const [openSection3, setOpenSection3] = useState(true)
-  const [openSection4, setOpenSection4] = useState(true)
+  const [openSection3, setOpenSection3] = useState(false)
+  const [openSection4, setOpenSection4] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<BlobPart[]>([])
 
